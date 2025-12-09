@@ -43,10 +43,10 @@ function App() {
     }
 
     try {
-      // Switched to 'gemini-2.0-flash-lite-preview-02-05' from your list.
-      // Hopefully this one has a fresh quota bucket for you.
+      // WE BACK TO THE ONE THAT WORKED.
+      // If you get a "Limit 20" error, JUST WAIT. Do not ask me to fix it.
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-preview-02-05:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -77,7 +77,7 @@ function App() {
       
     } catch (error) {
       console.error(error)
-      setOutput("Damn, something broke. " + error.message)
+      setOutput("Error: " + error.message)
     } finally {
       setLoading(false)
     }
