@@ -43,9 +43,10 @@ function App() {
     }
 
     try {
-      // Using gemini-flash-latest since we know it works (when you don't spam it)
+      // Switched to 'gemini-2.0-flash-lite-preview-02-05' from your list.
+      // Hopefully this one has a fresh quota bucket for you.
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-preview-02-05:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
