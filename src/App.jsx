@@ -10,7 +10,8 @@ function App() {
     setLoading(true)
     setOutput('')
 
-    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+    // I added .trim() here so if you pasted spaces by accident, it fixes it
+    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY?.trim()
     
     if (!API_KEY) {
         setOutput("Error: You forgot to set the API Key in Vercel, dummy! Go fix your settings.")
@@ -19,9 +20,9 @@ function App() {
     }
 
     try {
-      // Switched to 'gemini-pro' because Google was acting boujee about Flash
+      // WE USING GEMINI 1.5 FLASH. DO NOT CHANGE THIS URL.
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
