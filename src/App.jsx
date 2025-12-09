@@ -10,7 +10,6 @@ function App() {
     setLoading(true)
     setOutput('')
 
-    // I added .trim() here so if you pasted spaces by accident, it fixes it
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY?.trim()
     
     if (!API_KEY) {
@@ -20,9 +19,9 @@ function App() {
     }
 
     try {
-      // WE USING GEMINI 1.5 FLASH. DO NOT CHANGE THIS URL.
+      // Trying the specific version '001' to satisfy Google
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -44,8 +43,14 @@ function App() {
          throw new Error(data.error.message)
       }
 
-      const reply = data.candidates[0].content.parts[0].text
-      setOutput(reply)
+      // Check if candidates exist before trying to read them
+      if (data.candidates && data.candidates.length > 0) {
+          const reply = data.candidates[0].content.parts[0].text
+          setOutput(reply)
+      } else {
+          setOutput("Google didn't return any text. Try again.")
+      }
+      
     } catch (error) {
       console.error(error)
       setOutput("Damn, something broke. " + error.message)
