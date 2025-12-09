@@ -19,9 +19,10 @@ function App() {
     }
 
     try {
-      // We using the EXPERIMENTAL version (Free) instead of the Paid one
+      // Trying the generic alias that was in your list.
+      // This should point to the stable 1.5 Flash model.
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
