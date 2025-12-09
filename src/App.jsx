@@ -1,40 +1,25 @@
 import { useState } from 'react'
 
 function App() {
-  const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleClapback = async () => {
-    if (!input) return
+  const handleDebug = async () => {
     setLoading(true)
-    setOutput('')
+    setOutput('Interrogating Google...')
 
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY?.trim()
     
     if (!API_KEY) {
-        setOutput("Error: You forgot to set the API Key in Vercel, dummy! Go fix your settings.")
+        setOutput("Error: API Key is missing in Vercel. Fix it.")
         setLoading(false)
         return
     }
 
     try {
-      // Trying the specific version '001' to satisfy Google
+      // We sending a GET request to list all available models
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${API_KEY}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Rewrite the following text to be professional, corporate, and passive-aggressive. Keep the underlying meaning but make it sound like a polite office email that says "I hate you" professionally: "${input}"`
-              }]
-            }]
-          })
-        }
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`
       )
 
       const data = await response.json()
@@ -43,12 +28,16 @@ function App() {
          throw new Error(data.error.message)
       }
 
-      // Check if candidates exist before trying to read them
-      if (data.candidates && data.candidates.length > 0) {
-          const reply = data.candidates[0].content.parts[0].text
-          setOutput(reply)
+      // Format the list of models so we can read them
+      if (data.models) {
+          const modelNames = data.models
+              .filter(m => m.supportedGenerationMethods.includes("generateContent")) // Only get ones that can write text
+              .map(m => m.name)
+              .join('\n')
+          
+          setOutput("AVAILABLE MODELS (Pick one of these):\n\n" + modelNames)
       } else {
-          setOutput("Google didn't return any text. Try again.")
+          setOutput("No models found. Your key might be broken.")
       }
       
     } catch (error) {
@@ -62,49 +51,22 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6 flex flex-col items-center">
       <header className="mb-10 text-center">
-        <h1 className="text-4xl font-bold text-red-500 mb-2">Corporate Clapback 😤</h1>
-        <p className="text-slate-400">Turn your rage into "Professional" emails.</p>
+        <h1 className="text-4xl font-bold text-yellow-500 mb-2">DEBUG MODE 🕵️‍♂️</h1>
+        <p className="text-slate-400">Let's find out what's wrong.</p>
       </header>
 
       <main className="w-full max-w-2xl space-y-6">
-        
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-300">
-            What you REALLY wanna say (The Rant):
-          </label>
-          <textarea 
-            className="w-full h-32 p-4 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none text-slate-200"
-            placeholder="e.g. Stop calling me on the weekend you dumb micro-manager..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-        </div>
-
         <button 
-          onClick={handleClapback}
+          onClick={handleDebug}
           disabled={loading}
-          className="w-full py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+          className="w-full py-3 px-6 bg-yellow-600 hover:bg-yellow-700 text-black font-bold rounded-lg transition-colors disabled:opacity-50"
         >
-          {loading ? 'Consulting HR...' : '✨ Professionalize This Shit ✨'}
+          {loading ? 'Snitching...' : 'List Available Models'}
         </button>
 
-        {output && (
-          <div className="space-y-2 animate-pulse">
-            <label className="block text-sm font-medium text-green-400">
-              Corporate Safe Translation:
-            </label>
-            <div className="w-full p-4 bg-slate-800 border border-green-500/50 rounded-lg text-green-300 whitespace-pre-wrap">
-              {output}
-            </div>
-            <button 
-              onClick={() => navigator.clipboard.writeText(output)}
-              className="text-xs text-slate-500 hover:text-white underline"
-            >
-              Copy to Clipboard
-            </button>
-          </div>
-        )}
-
+        <div className="w-full p-4 bg-slate-800 border border-yellow-500/50 rounded-lg text-yellow-300 whitespace-pre-wrap font-mono text-sm">
+          {output || "Click the button to see what models your key can use."}
+        </div>
       </main>
     </div>
   )
