@@ -43,6 +43,7 @@ function App() {
     }
 
     try {
+      // Using gemini-flash-latest since we know it works (when you don't spam it)
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
         {
