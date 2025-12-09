@@ -10,7 +10,6 @@ function App() {
     setLoading(true)
     setOutput('')
 
-    // This grabs the key you just hid in Vercel
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
     
     if (!API_KEY) {
@@ -20,9 +19,9 @@ function App() {
     }
 
     try {
-      // We hitting the API raw, no protection
+      // Switched to 'gemini-pro' because Google was acting boujee about Flash
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -44,7 +43,6 @@ function App() {
          throw new Error(data.error.message)
       }
 
-      // Extract the corporate speak from the response
       const reply = data.candidates[0].content.parts[0].text
       setOutput(reply)
     } catch (error) {
