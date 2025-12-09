@@ -19,9 +19,9 @@ function App() {
     }
 
     try {
-      // WE USING GEMINI 2.0 FLASH because you got VIP access
+      // We using the EXPERIMENTAL version (Free) instead of the Paid one
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
