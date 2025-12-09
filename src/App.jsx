@@ -5,9 +5,10 @@ function App() {
   const [output, setOutput] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedTone, setSelectedTone] = useState('passive')
-  const [cooldown, setCooldown] = useState(0) // Timer to stop you from spamming
+  const [cooldown, setCooldown] = useState(0)
+  const [errorMsg, setErrorMsg] = useState('')
 
-  // Countdown timer logic
+  // Timer countdown effect
   useEffect(() => {
     let interval = null
     if (cooldown > 0) {
@@ -45,20 +46,20 @@ function App() {
     if (!input) return
     setLoading(true)
     setOutput('')
+    setErrorMsg('')
 
     const API_KEY = import.meta.env.VITE_GEMINI_API_KEY?.trim()
     
     if (!API_KEY) {
-        setOutput("Error: API Key missing. Go fix Vercel settings.")
+        setErrorMsg("Error: API Key missing. Go fix Vercel settings.")
         setLoading(false)
         return
     }
 
     try {
-      // Switched to 'gemini-1.5-flash'. It's older but reliable.
-      // If this fails, your key is fully burnt for the hour.
+      // WE ARE USING THE ONLY MODEL THAT WORKED FOR YOU
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -76,11 +77,11 @@ function App() {
 
       const data = await response.json()
       
-      // If we hit a rate limit, start the cooldown timer
+      // If we hit the rate limit, trigger the cooldown UI
       if (data.error) {
          if (data.error.message.includes('Quota') || data.error.code === 429) {
-             setCooldown(60) // Force a 60 second wait
-             throw new Error("You spamming too hard! I locked the button for 60 seconds. Chill out.")
+             setCooldown(60) // Start 60s timer
+             throw new Error("You hit the speed limit! Cooling down...")
          }
          throw new Error(data.error.message)
       }
@@ -89,12 +90,14 @@ function App() {
           const reply = data.candidates[0].content.parts[0].text
           setOutput(reply)
       } else {
-          setOutput("Google didn't return any text. Try again.")
+          setErrorMsg("Google didn't return any text. Try again.")
       }
       
     } catch (error) {
       console.error(error)
-      setOutput("Error: " + error.message)
+      if (!error.message.includes("speed limit")) {
+          setErrorMsg(error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -135,12 +138,13 @@ function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
+          
           <button 
             onClick={handleClapback}
             disabled={loading || cooldown > 0}
             className={`absolute bottom-3 right-3 py-1 px-4 text-sm font-bold rounded-full transition-all ${
                 loading || cooldown > 0 
-                ? 'bg-slate-600 text-slate-400 cursor-not-allowed' 
+                ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
                 : 'bg-white text-black hover:bg-slate-200'
             }`}
           >
@@ -148,11 +152,24 @@ function App() {
           </button>
         </div>
 
+        {/* ERROR MESSAGE DISPLAY */}
+        {errorMsg && !cooldown && (
+            <div className="p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm text-center">
+                {errorMsg}
+            </div>
+        )}
+
+        {/* COOLDOWN MESSAGE DISPLAY */}
+        {cooldown > 0 && (
+            <div className="p-3 bg-yellow-900/50 border border-yellow-500 rounded text-yellow-200 text-sm text-center animate-pulse">
+                ✋ <b>Whoa there!</b> Google needs a break. Please wait <b>{cooldown}</b> seconds.
+            </div>
+        )}
+
         {/* EMAIL PREVIEW WINDOW */}
-        {output && (
+        {output && !cooldown && (
           <div className="mt-8 animate-fadeIn">
             <div className="w-full bg-white rounded-lg shadow-2xl overflow-hidden text-slate-800">
-              {/* Fake Window Bar */}
               <div className="bg-slate-100 border-b border-slate-200 p-3 flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
@@ -160,14 +177,12 @@ function App() {
                 <span className="ml-2 text-xs text-slate-400 font-semibold">New Message</span>
               </div>
               
-              {/* Email Headers */}
               <div className="p-6 space-y-4">
                 <div className="border-b border-slate-100 pb-2 text-sm text-slate-500">
                   <span className="font-semibold text-slate-400 mr-2">To:</span> 
                   <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-xs">All Staff ✕</span>
                 </div>
                 
-                {/* Email Body */}
                 <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-serif">
                   {output}
                 </div>
