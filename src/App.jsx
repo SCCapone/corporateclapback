@@ -5,13 +5,54 @@ function App() {
   const [output, setOutput] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleClapback = () => {
+  const handleClapback = async () => {
     if (!input) return
     setLoading(true)
-    setTimeout(() => {
-      setOutput("Per my last email, please ensure you actually read the documentation before asking questions that have already been answered. Regards.")
+    setOutput('')
+
+    // This grabs the key you just hid in Vercel
+    const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+    
+    if (!API_KEY) {
+        setOutput("Error: You forgot to set the API Key in Vercel, dummy! Go fix your settings.")
+        setLoading(false)
+        return
+    }
+
+    try {
+      // We hitting the API raw, no protection
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Rewrite the following text to be professional, corporate, and passive-aggressive. Keep the underlying meaning but make it sound like a polite office email that says "I hate you" professionally: "${input}"`
+              }]
+            }]
+          })
+        }
+      )
+
+      const data = await response.json()
+      
+      if (data.error) {
+         throw new Error(data.error.message)
+      }
+
+      // Extract the corporate speak from the response
+      const reply = data.candidates[0].content.parts[0].text
+      setOutput(reply)
+    } catch (error) {
+      console.error(error)
+      setOutput("Damn, something broke. " + error.message)
+    } finally {
       setLoading(false)
-    }, 1500)
+    }
   }
 
   return (
@@ -22,6 +63,7 @@ function App() {
       </header>
 
       <main className="w-full max-w-2xl space-y-6">
+        
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-300">
             What you REALLY wanna say (The Rant):
@@ -39,7 +81,7 @@ function App() {
           disabled={loading}
           className="w-full py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
         >
-          {loading ? 'Translating Rage...' : '✨ Professionalize This Shit ✨'}
+          {loading ? 'Consulting HR...' : '✨ Professionalize This Shit ✨'}
         </button>
 
         {output && (
@@ -47,11 +89,18 @@ function App() {
             <label className="block text-sm font-medium text-green-400">
               Corporate Safe Translation:
             </label>
-            <div className="w-full p-4 bg-slate-800 border border-green-500/50 rounded-lg text-green-300">
+            <div className="w-full p-4 bg-slate-800 border border-green-500/50 rounded-lg text-green-300 whitespace-pre-wrap">
               {output}
             </div>
+            <button 
+              onClick={() => navigator.clipboard.writeText(output)}
+              className="text-xs text-slate-500 hover:text-white underline"
+            >
+              Copy to Clipboard
+            </button>
           </div>
         )}
+
       </main>
     </div>
   )
