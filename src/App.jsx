@@ -1,10 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function App() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedTone, setSelectedTone] = useState('passive')
+  const [cooldown, setCooldown] = useState(0) // Timer to stop you from spamming
+
+  // Countdown timer logic
+  useEffect(() => {
+    let interval = null
+    if (cooldown > 0) {
+      interval = setInterval(() => {
+        setCooldown((c) => c - 1)
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [cooldown])
 
   const tones = {
     passive: {
@@ -43,10 +55,10 @@ function App() {
     }
 
     try {
-      // WE BACK TO THE ONE THAT WORKED.
-      // If you get a "Limit 20" error, JUST WAIT. Do not ask me to fix it.
+      // Switched to 'gemini-1.5-flash'. It's older but reliable.
+      // If this fails, your key is fully burnt for the hour.
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -64,7 +76,12 @@ function App() {
 
       const data = await response.json()
       
+      // If we hit a rate limit, start the cooldown timer
       if (data.error) {
+         if (data.error.message.includes('Quota') || data.error.code === 429) {
+             setCooldown(60) // Force a 60 second wait
+             throw new Error("You spamming too hard! I locked the button for 60 seconds. Chill out.")
+         }
          throw new Error(data.error.message)
       }
 
@@ -120,10 +137,14 @@ function App() {
           />
           <button 
             onClick={handleClapback}
-            disabled={loading}
-            className="absolute bottom-3 right-3 py-1 px-4 bg-white text-black text-sm font-bold rounded-full hover:bg-slate-200 disabled:opacity-50"
+            disabled={loading || cooldown > 0}
+            className={`absolute bottom-3 right-3 py-1 px-4 text-sm font-bold rounded-full transition-all ${
+                loading || cooldown > 0 
+                ? 'bg-slate-600 text-slate-400 cursor-not-allowed' 
+                : 'bg-white text-black hover:bg-slate-200'
+            }`}
           >
-            {loading ? '...' : 'Generate'}
+            {loading ? '...' : cooldown > 0 ? `Wait ${cooldown}s` : 'Generate'}
           </button>
         </div>
 
